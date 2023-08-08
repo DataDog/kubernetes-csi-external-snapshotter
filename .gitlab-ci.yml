@@ -1,0 +1,26 @@
+include: https://gitlab-templates.ddbuild.io/compute-delivery/v2/compute-delivery.yml
+
+test:
+  stage: verify
+  tags: [ "arch:amd64" ]
+  image: registry.ddbuild.io/images/mirror/golang:1.20
+  script:
+    - make test-go test-vet test-fmt
+
+build-csi-snapshotter:
+  variables:
+    IMAGE_NAME: "csi-snapshotter"
+    EXTRA_ARGS: "-f cmd/csi-snapshotter/Dockerfile"
+  extends: .build-docker-image
+
+build-csi-snapshot-controller:
+  variables:
+    IMAGE_NAME: "csi-snapshot-controller"
+    EXTRA_ARGS: "-f cmd/snapshot-controller/Dockerfile"
+  extends: .build-docker-image
+
+build-csi-snapshot-validation-webhook:
+  variables:
+    IMAGE_NAME: "csi-snapshot-validation-webhook"
+    EXTRA_ARGS: "-f cmd/snapshot-validation-webhook/Dockerfile"
+  extends: .build-docker-image
