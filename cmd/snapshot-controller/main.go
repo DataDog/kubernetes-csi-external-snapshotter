@@ -113,15 +113,16 @@ func ensureCustomResourceDefinitionsExist(client *clientset.Clientset) error {
 		return true, nil
 	}
 
-	// The maximum retry duration = initial duration * retry factor ^ # steps. Rearranging, this gives
-	// # steps = log(maximum retry / initial duration) / log(retry factor).
+	// The maximum retry duration = initial duration * retry factor ^ # retries. Rearranging, this gives
+	// # retries = log(maximum retry / initial duration) / log(retry factor).
 	const retryFactor = 1.5
 	const initialDurationMs = 100
 	maxMs := retryCRDIntervalMax.Milliseconds()
 	if maxMs < initialDurationMs {
 		maxMs = initialDurationMs
 	}
-	steps := int(math.Ceil(math.Log(float64(maxMs)/initialDurationMs) / math.Log(retryFactor)))
+	retries := int(math.Ceil(math.Log(float64(maxMs)/initialDurationMs) / math.Log(retryFactor)))
+	steps := retries + 1
 	if steps < 1 {
 		steps = 1
 	}
