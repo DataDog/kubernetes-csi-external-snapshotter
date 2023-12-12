@@ -82,22 +82,30 @@ var version = "unknown"
 
 // Checks that the VolumeSnapshot v1 CRDs exist.
 func ensureCustomResourceDefinitionsExist(client *clientset.Clientset) error {
+	// All api requests should immediately timeout once the max interval is reached.
+	ctx, cancel := context.WithTimeout(context.Background(), *retryCRDIntervalMax)
+	defer cancel()
+
 	condition := func() (bool, error) {
 		var err error
+		listOptions := metav1.ListOptions{Limit: 0} // We do not really care about the results, just that the request succeeds.
 
 		// scoping to an empty namespace makes `List` work across all namespaces
-		_, err = client.SnapshotV1().VolumeSnapshots("").List(context.TODO(), metav1.ListOptions{})
+		vs, err := client.SnapshotV1().VolumeSnapshots("").List(ctx, listOptions)
+		klog.Infof("Found VolumeSnapshots: %+v", vs)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshots with error=%+v", err)
 			return false, nil
 		}
 
-		_, err = client.SnapshotV1().VolumeSnapshotClasses().List(context.TODO(), metav1.ListOptions{})
+		vsc, err := client.SnapshotV1().VolumeSnapshotClasses().List(ctx, listOptions)
+		klog.Infof("Found VolumeSnapshotClasses: %+v", vsc)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshotclasses with error=%+v", err)
 			return false, nil
 		}
-		_, err = client.SnapshotV1().VolumeSnapshotContents().List(context.TODO(), metav1.ListOptions{})
+		vscs, err := client.SnapshotV1().VolumeSnapshotContents().List(ctx, listOptions)
+		klog.Infof("Found VolumeSnapshotContents: %+v", vscs)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshotcontents with error=%+v", err)
 			return false, nil
