@@ -82,47 +82,46 @@ var version = "unknown"
 
 // Checks that the VolumeSnapshot v1 CRDs exist.
 func ensureCustomResourceDefinitionsExist(client *clientset.Clientset) error {
-	condition := func() (bool, error) {
+	condition := func(ctx context.Context) (bool, error) {
 		var err error
+		// List calls should return faster with a limit of 0.
+		// We do not care about what is returned and just want to make sure the CRDs exist.
+		listOptions := metav1.ListOptions{Limit: 0}
 
 		// scoping to an empty namespace makes `List` work across all namespaces
-		_, err = client.SnapshotV1().VolumeSnapshots("").List(context.TODO(), metav1.ListOptions{})
+		_, err = client.SnapshotV1().VolumeSnapshots("").List(ctx, listOptions)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshots with error=%+v", err)
 			return false, nil
 		}
 
-		_, err = client.SnapshotV1().VolumeSnapshotClasses().List(context.TODO(), metav1.ListOptions{})
+		_, err = client.SnapshotV1().VolumeSnapshotClasses().List(ctx, listOptions)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshotclasses with error=%+v", err)
 			return false, nil
 		}
-		_, err = client.SnapshotV1().VolumeSnapshotContents().List(context.TODO(), metav1.ListOptions{})
+		_, err = client.SnapshotV1().VolumeSnapshotContents().List(ctx, listOptions)
 		if err != nil {
 			klog.Errorf("Failed to list v1 volumesnapshotcontents with error=%+v", err)
 			return false, nil
 		}
+
 		return true, nil
 	}
 
-	// The maximum retry duration = initial duration * retry factor ^ # steps. Rearranging, this gives
-	// # steps = log(maximum retry / initial duration) / log(retry factor).
+	// The wait for CRDs will wait at most the duration specified by retryCRDIntervalMax
 	const retryFactor = 1.5
-	const initialDurationMs = 100
-	maxMs := retryCRDIntervalMax.Milliseconds()
-	if maxMs < initialDurationMs {
-		maxMs = initialDurationMs
-	}
-	steps := int(math.Ceil(math.Log(float64(maxMs)/initialDurationMs) / math.Log(retryFactor)))
-	if steps < 1 {
-		steps = 1
-	}
+	const initialDuration = 100 * time.Millisecond
+	// Sanity check to make sure we have a minimum time of 100ms
+	maxBackoffDuration := *retryCRDIntervalMax
 	backoff := wait.Backoff{
-		Duration: initialDurationMs * time.Millisecond,
+		Duration: initialDuration,
 		Factor:   retryFactor,
-		Steps:    steps,
+		Steps:    math.MaxInt32, // effectively no limit until the timeout is reached
 	}
-	if err := wait.ExponentialBackoff(backoff, condition); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), maxBackoffDuration)
+	defer cancel()
+	if err := wait.ExponentialBackoffWithContext(ctx, backoff, condition); err != nil {
 		return err
 	}
 
