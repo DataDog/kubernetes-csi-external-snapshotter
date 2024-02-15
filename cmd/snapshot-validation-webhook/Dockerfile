@@ -1,6 +1,6 @@
 ARG BASE_IMAGE
 
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 WORKDIR /go/src/kubernetes-csi/external-snapshotter
 ADD . .
 ENV GOFLAGS="-buildvcs=false"
