@@ -24,10 +24,3 @@ build-csi-snapshot-validation-webhook:
     IMAGE_NAME: "csi-snapshot-validation-webhook"
     EXTRA_ARGS: "-f cmd/snapshot-validation-webhook/Dockerfile"
   extends: .build-docker-image
-
-run-campaign-aws:
-  variables:
-    CHART_NAME: k8s-platform-aws-ebs-csi-driver
-    COMPONENT: snapshotter
-    SLACK_CHANNEL: compute-storage-ops
-  extends: .run-campaign
