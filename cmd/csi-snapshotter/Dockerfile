@@ -1,6 +1,7 @@
 ARG BASE_IMAGE
+ARG BUILDER_IMAGE
 
-FROM golang:1.21 as builder
+FROM $BUILDER_IMAGE as builder
 WORKDIR /go/src/kubernetes-csi/external-snapshotter
 ADD . .
 ENV GOTOOLCHAIN auto
