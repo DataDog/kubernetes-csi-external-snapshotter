@@ -20,9 +20,3 @@ build-csi-snapshot-controller:
     IMAGE_NAME: "csi-snapshot-controller"
     EXTRA_ARGS: "-f cmd/snapshot-controller/Dockerfile"
   extends: .build-docker-image
-
-build-csi-snapshot-validation-webhook:
-  variables:
-    IMAGE_NAME: "csi-snapshot-validation-webhook"
-    EXTRA_ARGS: "-f cmd/snapshot-validation-webhook/Dockerfile"
-  extends: .build-docker-image
