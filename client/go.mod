@@ -1,6 +1,6 @@
 module github.com/kubernetes-csi/external-snapshotter/client/v6
 
-go 1.19
+go 1.25.5
 
 require (
 	k8s.io/api v0.26.0
